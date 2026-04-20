@@ -47,44 +47,30 @@ android {
 }
 
 dependencies {
+    val composeBom = platform("androidx.compose:compose-bom:2026.03.01") // Versão estável hipotética em 2026
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.animation.core)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.foundation)
+    implementation(libs.androidx.foundation.layout)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation.compose)
+
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
-    // 1. Compose BOM (Define as versões de todas as libs de uma vez)
-    val composeBom = platform("androidx.compose:compose-bom:2026.03.01") // Versão estável hipotética em 2026
-    implementation(composeBom)
-    androidTestImplementation(composeBom)
-
-    // 2. Core & UI
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.activity:activity-compose:1.13.0")
-
-    // 3. Foundation & Layout (Box, Column, Row, LazyColumn)
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.foundation:foundation-layout")
-
-    // 4. Material Design 3
-    implementation("androidx.compose.material3:material3")
-
-    // 5. Integração com Android (Activity, ViewModel, Lifecycle)
-    implementation("androidx.activity:activity-compose:1.10.0") // Versão atualizada
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
-
-    // ESSENCIAL PARA PERFORMANCE: Coleta de fluxo consciente do ciclo de vida
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.5")
-
-    // 6. Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.0")
-
-    // 7. Tooling & Debug (Não vão para o APK final)
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

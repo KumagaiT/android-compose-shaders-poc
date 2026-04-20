@@ -1,4 +1,5 @@
 [versions]
+activityCompose = "1.13.0"
 agp = "9.1.1"
 kotlin = "2.1.0"
 coreKtx = "1.10.1"
@@ -6,13 +7,27 @@ junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 appcompat = "1.6.1"
+lifecycleViewmodelCompose = "2.10.0"
+lifecycleRuntimeCompose = "2.10.0"
 material = "1.10.0"
 constraintlayout = "2.1.4"
+navigationCompose = "2.9.7"
 runtime = "1.10.6"
 animationCore = "1.10.6"
 
 [libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+androidx-material3 = { module = "androidx.compose.material3:material3" }
+androidx-foundation-layout = { module = "androidx.compose.foundation:foundation-layout" }
+androidx-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-ui = { module = "androidx.compose.ui:ui" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
