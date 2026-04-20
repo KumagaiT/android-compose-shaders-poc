@@ -1,137 +1,160 @@
 #include <jni.h>
-#include <android/native_window.h>
-#include <android/native_window_jni.h>
-#include <mutex>
-#include <cmath>
-#include <algorithm>
+#include <GLES2/gl2.h>
+#include <vector>
+#include <string>
+#include <android/log.h>
 
-// Variável global para manter a referência enquanto a surface existir
-static ANativeWindow* g_nativeWindow = nullptr;
-static std::mutex g_windowMutex; // Protege o acesso global
+#define LOG_TAG "NativeVisualEngine"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-static float g_time = 0.0f;
+const char* VERTEX_SHADER =
+    "attribute vec4 aPosition;"
+    "void main() {"
+    "  gl_Position = aPosition;"
+    "}";
 
-// Helpers matemáticos equivalentes ao GLSL
-inline float fract(float x) { return x - std::floor(x); }
-inline float mix(float a, float b, float t) { return a + t * (b - a); }
-inline float step(float edge, float x) { return x < edge ? 0.0f : 1.0f; }
+const char* FRAGMENT_SHADER =
+    "precision highp float;"
+    "uniform vec2 uResolution;"
+    "uniform float uTime;"
+    "uniform vec4 uSmokeColor;"
 
-// Hash "Hash Without Sine" para C++
-float hash(float x, float y) {
-    float p3x = fract(x * 0.1031f);
-    float p3y = fract(y * 0.1031f);
-    float p3z = fract(x * 0.1031f);
+    "float hash(vec2 p) {"
+    "    vec3 p3 = fract(vec3(p.xyx) * 0.1031);"
+    "    p3 += dot(p3, p3.yzx + 33.33);"
+    "    return fract((p3.x + p3.y) * p3.z);"
+    "}"
 
-    float dotVal = p3x * (p3y + 33.33f) + p3y * (p3z + 33.33f) + p3z * (p3x + 33.33f);
-    p3x += dotVal;
-    p3y += dotVal;
-    p3z += dotVal;
-    return fract((p3x + p3y) * p3z);
-}
+    "float noise(vec2 p) {"
+    "    vec2 i = floor(p);"
+    "    vec2 f = fract(p);"
+    "    vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);"
+    "    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),"
+    "               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);"
+    "}"
 
-float noise(float x, float y) {
-    float ix = std::floor(x);
-    float iy = std::floor(y);
-    float fx = fract(x);
-    float fy = fract(y);
+    "float fbm(vec2 p) {"
+    "    float v = 0.0;"
+    "    float a = 0.5;"
+    "    mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);" // Matriz de rotação (~36 graus)
+    "    for (int i = 0; i < 5; ++i) {"
+    "        v += a * noise(p + uTime * 0.1);"
+    "        p = rot * p * 2.2 + vec2(10.0, 10.0);" // Rotaciona e escala
+    "        a *= 0.48;"
+    "    }"
+    "    return v;"
+    "}"
 
-    // Interpolação quintic para suavidade máxima
-    float ux = fx * fx * fx * (fx * (fx * 6.0f - 15.0f) + 10.0f);
-    float uy = fy * fy * fy * (fy * (fy * 6.0f - 15.0f) + 10.0f);
+    "void main() {"
+    "    vec2 uv = gl_FragCoord.xy / uResolution.xy;"
+    "    float aspect = uResolution.x / uResolution.y;"
+    "    vec2 p = uv;"
+    "    p.x *= aspect;"
+    "    float intensity = fbm(p * 2.5);"
+    "    intensity = smoothstep(0.1, 0.8, intensity);"
+    "    float dist = length(p - vec2(0.5 * aspect, 0.5));"
+    "    float vignette = smoothstep(0.8, 0.3, dist);"
+    "    intensity *= vignette;"
+    "    vec3 finalColor = mix(vec3(1.0, 1.0, 1.0), uSmokeColor.rgb, intensity);"
+    "    gl_FragColor = vec4(finalColor, 1.0);"
+    "}";
 
-    return mix(mix(hash(ix, iy), hash(ix + 1.0f, iy), ux),
-               mix(hash(ix, iy + 1.0f), hash(ix + 1.0f, iy + 1.0f), ux), uy);
-}
+GLuint gProgram = 0;
+GLint gaPositionHandle = -1;
+GLint guResolutionHandle = -1;
+GLint guTimeHandle = -1;
+GLint guSmokeColorHandle = -1;
 
-float fbm(float x, float y, float time) {
-    float v = 0.0f;
-    float a = 0.5f;
-    for (int i = 0; i < 4; ++i) {
-        float velocity = 0.1f + (float)i * 0.02f;
-        v += a * noise(x + time * velocity, y + time * velocity);
-        x = x * 2.1f + 7.31f;
-        y = y * 2.1f + 7.31f;
-        a *= 0.4f; // Reduzido para suavizar (menos detalhes "picados")
+void checkGlError(const char* op) {
+    for (GLint error = glGetError(); error; error = glGetError()) {
+        LOGE("after %s() glError (0x%x)\n", op, error);
     }
-    return v;
+}
+
+GLuint loadShader(GLenum type, const char* shaderCode) {
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &shaderCode, NULL);
+    glCompileShader(shader);
+    GLint compiled;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    if (!compiled) {
+        GLint infoLen = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+        if (infoLen) {
+            char* buf = (char*) malloc(infoLen);
+            if (buf) {
+                glGetShaderInfoLog(shader, infoLen, NULL, buf);
+                LOGE("Could not compile shader %d:\n%s\n", type, buf);
+                free(buf);
+            }
+        }
+        glDeleteShader(shader);
+        return 0;
+    }
+    return shader;
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_kumagai_composeshaders_NativeVisualEngine_drawSurface(JNIEnv *env, jobject thiz, jint color) {
-    std::lock_guard<std::mutex> lock(g_windowMutex);
-    if (g_nativeWindow == nullptr) return;
+Java_com_kumagai_composeshaders_NativeVisualEngine_initGL(JNIEnv *env, jobject thiz) {
+    GLuint vertexShader = loadShader(GL_VERTEX_SHADER, VERTEX_SHADER);
+    GLuint fragmentShader = loadShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER);
 
-    ANativeWindow_Buffer buffer;
-    if (ANativeWindow_lock(g_nativeWindow, &buffer, NULL) == 0) {
-        if (buffer.bits == nullptr || buffer.format != WINDOW_FORMAT_RGBA_8888) {
-            ANativeWindow_unlockAndPost(g_nativeWindow);
-            return;
-        }
+    gProgram = glCreateProgram();
+    glAttachShader(gProgram, vertexShader);
+    glAttachShader(gProgram, fragmentShader);
+    glLinkProgram(gProgram);
 
-        // Versão estática: não incrementamos o g_time
-        uint32_t* pixelPtr = (uint32_t*)buffer.bits;
+    GLint linkStatus;
+    glGetProgramiv(gProgram, GL_LINK_STATUS, &linkStatus);
+    if (linkStatus != GL_TRUE) {
+        LOGE("Could not link program");
+    }
 
-        // Extrai as cores do ARGB enviado pelo Kotlin
-        const float smokeR = (float)((color >> 16) & 0xFF);
-        const float smokeG = (float)((color >> 8) & 0xFF);
-        const float smokeB = (float)(color & 0xFF);
+    gaPositionHandle = glGetAttribLocation(gProgram, "aPosition");
+    guResolutionHandle = glGetUniformLocation(gProgram, "uResolution");
+    guTimeHandle = glGetUniformLocation(gProgram, "uTime");
+    guSmokeColorHandle = glGetUniformLocation(gProgram, "uSmokeColor");
+}
 
-        for (int y = 0; y < buffer.height; ++y) {
-            uint32_t* row = pixelPtr + (y * buffer.stride);
-            float uvY = (float)y / buffer.height;
-
-            for (int x = 0; x < buffer.width; ++x) {
-                float uvX = (float)x / buffer.width;
-
-                // FBM Estático (tempo fixo em 0.0)
-                // Escala reduzida (1.5f) para manchas maiores e mais suaves
-                float intensity = fbm(uvX * 1.5f, uvY * 1.5f, 0.0f);
-
-                // Transição ultra suave: Range de 0.0 a 1.0 para evitar bordas
-                intensity = std::max(0.0f, std::min(1.0f, (intensity - 0.05f) / 0.9f));
-
-                // Interpolação: Branco Puro -> Cor da Mancha
-                uint32_t r = (uint32_t)(255.0f - (255.0f - smokeR) * intensity);
-                uint32_t g = (uint32_t)(255.0f - (255.0f - smokeG) * intensity);
-                uint32_t b = (uint32_t)(255.0f - (255.0f - smokeB) * intensity);
-
-                // Alpha 255 (Opaco)
-                row[x] = (0xFF << 24) | (b << 16) | (g << 8) | r;
-            }
-        }
-        ANativeWindow_unlockAndPost(g_nativeWindow);
+extern "C" JNIEXPORT void JNICALL
+Java_com_kumagai_composeshaders_NativeVisualEngine_resizeGL(JNIEnv *env, jobject thiz, jint width, jint height) {
+    glViewport(0, 0, width, height);
+    if (gProgram != 0) {
+        glUseProgram(gProgram);
+        glUniform2f(guResolutionHandle, (float)width, (float)height);
     }
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_kumagai_composeshaders_NativeVisualEngine_setSurface(JNIEnv *env, jobject thiz, jobject surface) {
-    std::lock_guard<std::mutex> lock(g_windowMutex);
-    if (g_nativeWindow != nullptr) {
-        ANativeWindow_release(g_nativeWindow);
-        g_nativeWindow = nullptr;
-    }
+extern "C" JNIEXPORT void JNICALL
+Java_com_kumagai_composeshaders_NativeVisualEngine_renderGL(JNIEnv *env, jobject thiz, jint color, jfloat time) {
+    // Clear com Cinza Claro para depurar: se o fundo for branco, o desenho funcionou.
+    // Se for cinza claro, o desenho falhou.
+    glClearColor(0.95f, 0.95f, 0.95f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    if (surface != nullptr) {
-        g_nativeWindow = ANativeWindow_fromSurface(env, surface);
+    if (gProgram == 0) return;
 
-        // PERFORMANCE: Reduzimos a resolução interna do buffer.
-        // Renderizar em 1/4 da resolução (4x menor em cada eixo) melhora a performance em 16x.
-        // O hardware do Android fará o upscale suave automaticamente.
-        int32_t width = ANativeWindow_getWidth(g_nativeWindow);
-        int32_t height = ANativeWindow_getHeight(g_nativeWindow);
-        if (width > 0 && height > 0) {
-            ANativeWindow_setBuffersGeometry(g_nativeWindow, width / 4, height / 4, WINDOW_FORMAT_RGBA_8888);
-        }
-    }
-}
+    glUseProgram(gProgram);
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_kumagai_composeshaders_NativeVisualEngine_releaseSurface(JNIEnv *env, jobject thiz) {
-    std::lock_guard<std::mutex> lock(g_windowMutex);
-    if (g_nativeWindow != nullptr) {
-        ANativeWindow_release(g_nativeWindow);
-        g_nativeWindow = nullptr;
+    float r = (float)((color >> 16) & 0xFF) / 255.0f;
+    float g = (float)((color >> 8) & 0xFF) / 255.0f;
+    float b = (float)(color & 0xFF) / 255.0f;
+    float a = (float)((color >> 24) & 0xFF) / 255.0f;
+
+    glUniform4f(guSmokeColorHandle, r, g, b, a);
+    glUniform1f(guTimeHandle, time);
+
+    static const float vertices[] = {
+        -1.0f,  1.0f,
+        -1.0f, -1.0f,
+         1.0f,  1.0f,
+         1.0f, -1.0f,
+    };
+
+    if (gaPositionHandle != -1) {
+        glVertexAttribPointer(gaPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+        glEnableVertexAttribArray(gaPositionHandle);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 }

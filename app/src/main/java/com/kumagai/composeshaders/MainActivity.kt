@@ -16,11 +16,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             Box(modifier = Modifier.fillMaxSize()) {
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//                    NativeSmokeBackground(isAnimated = true)
-//                } else {
-                    NativeCompatSmokeBackground()
-//                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    NativeSmokeBackground(isAnimated = true)
+                } else {
+                    NativeCompatSmokeBackground(isAnimated = true)
+                }
 
                 FpsCounter(
                     modifier = Modifier
