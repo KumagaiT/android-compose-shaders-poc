@@ -1,4 +1,4 @@
-package com.kumagai.myapplication
+package com.kumagai.composeshaders
 
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
-import com.kumagai.myapplication.NativeVisualEngine.drawSurface
-import com.kumagai.myapplication.NativeVisualEngine.releaseSurface
-import com.kumagai.myapplication.NativeVisualEngine.setSurface
+import com.kumagai.composeshaders.NativeVisualEngine.drawSurface
+import com.kumagai.composeshaders.NativeVisualEngine.releaseSurface
+import com.kumagai.composeshaders.NativeVisualEngine.setSurface
 
 object NativeVisualEngine {
     init {

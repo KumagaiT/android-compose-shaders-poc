@@ -1,4 +1,4 @@
-package com.kumagai.myapplication
+package com.kumagai.composeshaders
 
 import android.graphics.Paint
 import android.graphics.RuntimeShader

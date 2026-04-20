@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.kumagai.myapplication"
+    namespace = "com.kumagai.composeshaders"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.kumagai.myapplication"
+        applicationId = "com.kumagai.composeshaders"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

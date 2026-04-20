@@ -57,7 +57,7 @@ float fbm(float x, float y, float time) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_kumagai_myapplication_NativeVisualEngine_drawSurface(JNIEnv *env, jobject thiz, jint color) {
+Java_com_kumagai_composeshaders_NativeVisualEngine_drawSurface(JNIEnv *env, jobject thiz, jint color) {
     std::lock_guard<std::mutex> lock(g_windowMutex);
     if (g_nativeWindow == nullptr) return;
 
@@ -105,7 +105,7 @@ Java_com_kumagai_myapplication_NativeVisualEngine_drawSurface(JNIEnv *env, jobje
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_kumagai_myapplication_NativeVisualEngine_setSurface(JNIEnv *env, jobject thiz, jobject surface) {
+Java_com_kumagai_composeshaders_NativeVisualEngine_setSurface(JNIEnv *env, jobject thiz, jobject surface) {
     std::lock_guard<std::mutex> lock(g_windowMutex);
     if (g_nativeWindow != nullptr) {
         ANativeWindow_release(g_nativeWindow);
@@ -128,7 +128,7 @@ Java_com_kumagai_myapplication_NativeVisualEngine_setSurface(JNIEnv *env, jobjec
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_kumagai_myapplication_NativeVisualEngine_releaseSurface(JNIEnv *env, jobject thiz) {
+Java_com_kumagai_composeshaders_NativeVisualEngine_releaseSurface(JNIEnv *env, jobject thiz) {
     std::lock_guard<std::mutex> lock(g_windowMutex);
     if (g_nativeWindow != nullptr) {
         ANativeWindow_release(g_nativeWindow);
