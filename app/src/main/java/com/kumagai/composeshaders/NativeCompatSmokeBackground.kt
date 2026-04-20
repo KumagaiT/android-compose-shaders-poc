@@ -15,7 +15,7 @@ import com.kumagai.composeshaders.NativeVisualEngine.setSurface
 
 object NativeVisualEngine {
     init {
-        System.loadLibrary("myapplication")
+        System.loadLibrary("compose_shaders")
     }
 
     external fun setSurface(surface: Surface?)
