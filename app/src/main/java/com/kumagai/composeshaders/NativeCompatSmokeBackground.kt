@@ -1,11 +1,6 @@
 package com.kumagai.composeshaders
 
 import android.opengl.GLSurfaceView
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -26,57 +21,30 @@ object NativeVisualEngine {
     external fun renderGL(color: Int, time: Float)
 }
 
-// Renderer customizável para facilitar a atualização de propriedades de forma thread-safe
-private class SmokeRenderer : GLSurfaceView.Renderer {
-    var smokeColorInt: Int = 0
-    var timeValue: Float = 0f
-
-    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        NativeVisualEngine.initGL()
-    }
-
-    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        NativeVisualEngine.resizeGL(width, height)
-    }
-
-    override fun onDrawFrame(gl: GL10?) {
-        NativeVisualEngine.renderGL(smokeColorInt, timeValue)
-    }
-}
-
 @Composable
 fun NativeCompatSmokeBackground(
     modifier: Modifier = Modifier,
-    smokeColor: Color = Color(0xFFFFD0E0),
+    smokeColor: Color = Color(0xFFFF00E0),
     isAnimated: Boolean = true
 ) {
-    // 1. Gerencia a animação do tempo se solicitado
-    val time = if (isAnimated) {
-        val infiniteTransition = rememberInfiniteTransition(label = "SmokeTime")
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 100f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(100000, easing = LinearEasing)
-            ),
-            label = "TimeValue",
-        ).value
-    } else {
-        0f
-    }
-
-    // 2. Lembra da instância do renderer para podermos atualizar as propriedades
+    // Mantemos o renderer em um remember para evitar recriação
     val smokeRenderer = remember { SmokeRenderer() }
 
-    // 3. Usa o AndroidView para hospedar o GLSurfaceView
     AndroidView(
         modifier = modifier.fillMaxSize(),
         factory = { context ->
             GLSurfaceView(context).apply {
+                // Configuração para GLES 2.0 (mais compatível)
                 setEGLContextClientVersion(2)
+
+                // Otimização: solicita um config sem depth ou stencil se não for usar (economiza banda)
+                setEGLConfigChooser(8, 8, 8, 8, 0, 0)
+
                 setRenderer(smokeRenderer)
-                
-                // RENDERMODE_CONTINUOUSLY para animação fluida (GPU sempre rodando)
+
+                // Preservar o contexto ajuda na performance de troca de apps
+                preserveEGLContextOnPause = true
+
                 renderMode = if (isAnimated) {
                     GLSurfaceView.RENDERMODE_CONTINUOUSLY
                 } else {
@@ -85,14 +53,55 @@ fun NativeCompatSmokeBackground(
             }
         },
         update = { view ->
-            // Sincroniza as cores e o tempo com o renderer na Thread de Renderização
+            // Atualiza apenas os valores atômicos no renderer
             smokeRenderer.smokeColorInt = smokeColor.toArgb()
-            smokeRenderer.timeValue = time
-            
-            // Se não estiver em modo contínuo, solicita um novo frame manualmente
+            smokeRenderer.isAnimated = isAnimated
+
+            val targetMode = if (isAnimated) {
+                GLSurfaceView.RENDERMODE_CONTINUOUSLY
+            } else {
+                GLSurfaceView.RENDERMODE_WHEN_DIRTY
+            }
+
+            if (view.renderMode != targetMode) {
+                view.renderMode = targetMode
+            }
+
             if (!isAnimated) {
                 view.requestRender()
             }
         }
     )
+}
+
+private class SmokeRenderer : GLSurfaceView.Renderer {
+    @Volatile var smokeColorInt: Int = 0
+    @Volatile var isAnimated: Boolean = true
+
+    private var startTime: Long = -1
+    private var lastPausedTime: Float = 0f
+
+    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        NativeVisualEngine.initGL()
+        startTime = System.currentTimeMillis()
+    }
+
+    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        NativeVisualEngine.resizeGL(width, height)
+    }
+
+    override fun onDrawFrame(gl: GL10?) {
+        val currentTime = if (isAnimated) {
+            if (startTime == -1L) startTime = System.currentTimeMillis()
+            (System.currentTimeMillis() - startTime) / 1000f
+        } else {
+            if (startTime != -1L) {
+                lastPausedTime = (System.currentTimeMillis() - startTime) / 1000f
+                startTime = -1L
+            }
+            lastPausedTime
+        }
+
+        NativeVisualEngine.renderGL(smokeColorInt, currentTime)
+    }
 }
