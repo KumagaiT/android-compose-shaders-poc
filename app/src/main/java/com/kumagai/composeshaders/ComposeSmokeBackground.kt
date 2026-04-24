@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import kotlin.math.floor
 import kotlin.math.sqrt
+import androidx.core.graphics.createBitmap
 
 @Composable
 fun ComposeSmokeBackground(
@@ -45,7 +46,7 @@ fun ComposeSmokeBackground(
         val height = (constraints.maxHeight * resolutionScale).toInt().coerceAtLeast(1)
 
         val bitmap = remember(width, height) {
-            Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            createBitmap(width, height)
         }
         val pixels = remember(width, height) { IntArray(width * height) }
         val dstRect = remember(constraints.maxWidth, constraints.maxHeight) {
