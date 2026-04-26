@@ -1,4 +1,4 @@
-package com.kumagai.composeshaders
+package com.kumagai.composeshaders.smoke
 
 import android.graphics.Paint
 import android.graphics.RuntimeShader

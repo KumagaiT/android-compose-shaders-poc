@@ -1,4 +1,4 @@
-package com.kumagai.composeshaders
+package com.kumagai.composeshaders.smoke
 
 import android.opengl.GLSurfaceView
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,18 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
+import com.kumagai.composeshaders.NativeVisualEngine
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-
-object NativeVisualEngine {
-    init {
-        System.loadLibrary("compose_shaders")
-    }
-
-    external fun initGL()
-    external fun resizeGL(width: Int, height: Int)
-    external fun renderGL(color: Int, time: Float)
-}
 
 @Composable
 fun NativeCompatSmokeBackground(

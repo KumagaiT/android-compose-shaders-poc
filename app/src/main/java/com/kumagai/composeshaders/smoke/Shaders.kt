@@ -1,4 +1,4 @@
-package com.kumagai.composeshaders
+package com.kumagai.composeshaders.smoke
 
 const val SMOKE_SHADER_CODE = """
 uniform float2 uResolution;

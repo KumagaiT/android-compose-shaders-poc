@@ -1,6 +1,5 @@
-package com.kumagai.composeshaders
+package com.kumagai.composeshaders.smoke
 
-import android.graphics.Bitmap
 import android.graphics.Rect
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
