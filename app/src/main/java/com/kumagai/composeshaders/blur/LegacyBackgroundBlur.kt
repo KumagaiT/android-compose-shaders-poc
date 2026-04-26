@@ -19,9 +19,9 @@ import kotlin.math.roundToInt
  * Focado em controle total de memória e otimização para CPU.
  */
 fun Modifier.legacyBackgroundBlur(
-    blurRadius: Int = 16,
+    blurRadius: Int = 10,
     downsample: Float = 2f,
-    overlayColor: Color = Color.White.copy(alpha = 0.12f)
+    overlayColor: Color = Color.White.copy(alpha = 0.20f)
 ): Modifier = this.composed {
     val view = LocalView.current
     val blurState = remember { BlurState() }

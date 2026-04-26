@@ -15,7 +15,7 @@ import javax.microedition.khronos.opengles.GL10
 @Composable
 fun NativeCompatSmokeBackground(
     modifier: Modifier = Modifier,
-    smokeColor: Color = Color(0xFFFF00E0),
+    smokeColor: Color = Color(0xFFFFD0E0),
     isAnimated: Boolean = true
 ) {
     // Mantemos o renderer em um remember para evitar recriação

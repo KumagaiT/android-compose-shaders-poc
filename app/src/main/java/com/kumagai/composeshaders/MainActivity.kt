@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                     Color(0xFFFF00E0), // Magenta
                     Color(0xFF00E5FF), // Cyan
                     Color(0xFFFFB300), // Orange
-                    Color(0xFF00FF00), // Green
+                    Color(0xFFFFD0E0), // Light pink
                     Color(0xFFFFFFFF)  // White
                 )
 
@@ -183,8 +183,8 @@ fun SmokeSection(selectedColor: Color, implementationIndex: Int) {
 fun BlurSection(selectedColor: Color, implementationIndex: Int) {
     Box(modifier = Modifier.fillMaxSize()) {
         // Conteúdo de fundo para ser borrado
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(50) { i ->
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 100.dp)) {
+            items(30) { i ->
                 Card(
                     modifier = Modifier
                         .padding(8.dp)
@@ -195,8 +195,29 @@ fun BlurSection(selectedColor: Color, implementationIndex: Int) {
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Post #$i", style = MaterialTheme.typography.titleMedium)
-                        Text("Teste de performance do efeito Frosty Window no Snapdragon 450. " + 
-                             "Role a lista para verificar a estabilidade do scroll.")
+                        
+                        val infoText = when (implementationIndex) {
+                            0 -> """
+                                1. NDK StackBlur (CPU + SIMD)
+                                • How it works: Processing is done entirely on the CPU. It uses mathematical algorithms (StackBlur) written in C++ to manipulate Bitmap pixels. It uses NEON (SIMD) instructions to parallelize calculations.
+                                • Advantage: Compatible with any Android version.
+                                • Disadvantage: It is the heaviest option. Depending on resolution, it can cause FPS drops by overloading the main processor, which is not optimized for graphics like the GPU.
+                            """.trimIndent()
+                            1 -> """
+                                2. RenderScript (GPU Legacy)
+                                • How it works: A Google API (now deprecated) that automatically sends processing to the GPU or DSP. It uses a system-optimized image processing "Script".
+                                • Advantage: Much faster than NDK, as it leverages graphics hardware without requiring complex GLES code.
+                                • Disadvantage: Deprecated since Android 12. On recent Android versions, it runs via software emulation, losing much of its original performance benefit.
+                            """.trimIndent()
+                            else -> """
+                                3. Modern Blur / RenderNode (Native GPU - API 31+)
+                                • How it works: Uses new Android 12+ APIs (RenderEffect). Blurring occurs directly in the UI rendering pipeline (Hardware Renderer). In Compose, it is applied via Modifier.graphicsLayer { renderEffect = ... }.
+                                • Advantage: The most performant and efficient solution. The system applies blur in real-time while drawing the screen, without needing to extract Bitmaps or manage buffers manually.
+                                • Disadvantage: Only works on devices running Android 12 or higher.
+                            """.trimIndent()
+                        }
+                        
+                        Text(infoText, style = MaterialTheme.typography.bodySmall)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row {
                              Box(modifier = Modifier.size(40.dp).background(Color.Red.copy(0.7f), MaterialTheme.shapes.small))
@@ -213,10 +234,9 @@ fun BlurSection(selectedColor: Color, implementationIndex: Int) {
         // Janela de "Vidro" (Frosty Window)
         Box(
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 32.dp)
-                .fillMaxWidth()
-                .height(250.dp)
+                .align(Alignment.TopStart)
+                .fillMaxWidth().padding(top = 100.dp)
+                .height(150.dp)
                 .then(
                     when (implementationIndex) {
                         0 -> Modifier.legacyBackgroundBlur(overlayColor = selectedColor.copy(alpha = 0.15f))

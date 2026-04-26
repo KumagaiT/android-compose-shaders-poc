@@ -27,9 +27,9 @@ import kotlin.math.roundToInt
  * Ideal para o Snapdragon 450 por delegar o peso para a GPU.
  */
 fun Modifier.renderScriptBackgroundBlur(
-    blurRadius: Float = 16f, // RenderScript aceita até 25f
+    blurRadius: Float = 10f, // RenderScript aceita até 25f
     downsample: Float = 2f,
-    overlayColor: Color = Color.White.copy(alpha = 0.21f)
+    overlayColor: Color = Color.White.copy(alpha = 0.20f)
 ): Modifier = this.composed {
     val context = LocalContext.current
     val view = LocalView.current

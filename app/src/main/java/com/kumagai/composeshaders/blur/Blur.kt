@@ -67,15 +67,15 @@ fun Modifier.applyCommonBlurEffects(
             
             // Vertical: Suaviza Topo e Base
             maskPaint.shader = LinearGradient(0f, 0f, 0f, h,
-                intArrayOf(0x00FFFFFF, -0x1, -0x1, 0x00FFFFFF),
-                floatArrayOf(0f, 0.08f, 0.92f, 1f), Shader.TileMode.CLAMP)
+                intArrayOf(-0x1, -0x1, -0x1, -0x1, 0x00FFFFFF),
+                floatArrayOf(0f, 0.20f, 0.5f ,0.80f, 1f), Shader.TileMode.CLAMP)
             nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
 
             // Horizontal: Suaviza Laterais
-            maskPaint.shader = LinearGradient(0f, 0f, w, 0f,
-                intArrayOf(0x00FFFFFF, -0x1, -0x1, 0x00FFFFFF),
-                floatArrayOf(0f, 0.04f, 0.96f, 1f), Shader.TileMode.CLAMP)
-            nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
+//            maskPaint.shader = LinearGradient(0f, 0f, w, 0f,
+//                intArrayOf(0x00FFFFFF, -0x1, -0x1, 0x00FFFFFF),
+//                floatArrayOf(0f, 0.1f, 0.9f, 1f), Shader.TileMode.CLAMP)
+//            nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
             
             nativeCanvas.restoreToCount(checkpoint)
 

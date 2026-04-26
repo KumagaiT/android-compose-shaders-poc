@@ -22,9 +22,9 @@ import kotlin.math.roundToInt
  * Utiliza RenderNode e RenderEffect para um blur nativo na RenderThread.
  */
 fun Modifier.modernBackgroundBlur(
-    blurRadius: Float = 16f,
+    blurRadius: Float = 10f,
     downsample: Float = 2f,
-    overlayColor: Color = Color.White.copy(alpha = 0.12f)
+    overlayColor: Color = Color.White.copy(alpha = 0.20f)
 ): Modifier = this.composed {
     val view = LocalView.current
     val blurState = remember { BlurState() }
