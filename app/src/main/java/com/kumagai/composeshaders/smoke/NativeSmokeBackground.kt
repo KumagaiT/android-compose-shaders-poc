@@ -33,7 +33,7 @@ fun NativeSmokeBackground(
         val infiniteTransition = rememberInfiniteTransition(label = "SmokeTime")
         infiniteTransition.animateFloat(
             initialValue = 0f,
-            targetValue = 100f,
+            targetValue = 200f,
             animationSpec = infiniteRepeatable(animation = tween(100000, easing = LinearEasing)),
             label = "TimeValue",
         ).value

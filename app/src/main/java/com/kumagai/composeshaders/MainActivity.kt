@@ -198,19 +198,19 @@ fun BlurSection(selectedColor: Color, implementationIndex: Int) {
                         
                         val infoText = when (implementationIndex) {
                             0 -> """
-                                1. NDK StackBlur (CPU + SIMD)
+                                NDK StackBlur (CPU + SIMD)
                                 • How it works: Processing is done entirely on the CPU. It uses mathematical algorithms (StackBlur) written in C++ to manipulate Bitmap pixels. It uses NEON (SIMD) instructions to parallelize calculations.
                                 • Advantage: Compatible with any Android version.
                                 • Disadvantage: It is the heaviest option. Depending on resolution, it can cause FPS drops by overloading the main processor, which is not optimized for graphics like the GPU.
                             """.trimIndent()
                             1 -> """
-                                2. RenderScript (GPU Legacy)
+                                RenderScript (GPU Legacy)
                                 • How it works: A Google API (now deprecated) that automatically sends processing to the GPU or DSP. It uses a system-optimized image processing "Script".
                                 • Advantage: Much faster than NDK, as it leverages graphics hardware without requiring complex GLES code.
                                 • Disadvantage: Deprecated since Android 12. On recent Android versions, it runs via software emulation, losing much of its original performance benefit.
                             """.trimIndent()
                             else -> """
-                                3. Modern Blur / RenderNode (Native GPU - API 31+)
+                                Modern Blur / RenderNode (Native GPU - API 31+)
                                 • How it works: Uses new Android 12+ APIs (RenderEffect). Blurring occurs directly in the UI rendering pipeline (Hardware Renderer). In Compose, it is applied via Modifier.graphicsLayer { renderEffect = ... }.
                                 • Advantage: The most performant and efficient solution. The system applies blur in real-time while drawing the screen, without needing to extract Bitmaps or manage buffers manually.
                                 • Disadvantage: Only works on devices running Android 12 or higher.
