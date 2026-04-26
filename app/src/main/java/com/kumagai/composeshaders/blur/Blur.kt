@@ -6,6 +6,7 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.Shader
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.setValue
@@ -60,43 +61,49 @@ fun Modifier.applyCommonBlurEffects(
             // 2. Desenha o fundo borrado (específico de cada implementação)
             drawBlur(nativeCanvas, w, h)
 
-            // 3. Máscara de Vinheta Suave (Resolve o aspecto de adesivo)
+            // 3. Desenha Tint, Rim Light e Borda dentro da camada para que sofram a máscara
+            // Tinta de preenchimento (Overlay Color)
+            val tintPaint = android.graphics.Paint().apply { 
+                color = overlayColor.toArgb() 
+                style = android.graphics.Paint.Style.FILL
+            }
+            nativeCanvas.drawRect(0f, 0f, w, h, tintPaint)
+
+            // Rim Light superior (simula incidência de luz no topo)
+            val rimPaint = android.graphics.Paint().apply {
+                shader = LinearGradient(0f, 0f, 0f, h * 0.2f,
+                    intArrayOf(Color.White.copy(alpha = 0.25f).toArgb(), 0x00FFFFFF),
+                    null, Shader.TileMode.CLAMP)
+            }
+            nativeCanvas.drawRect(0f, 0f, w, h, rimPaint)
+
+            // Borda física (Stroke) com fade para não cortar seco na base
+            val strokePaint = android.graphics.Paint().apply {
+                shader = LinearGradient(0f, 0f, 0f, h,
+                    intArrayOf(Color.White.copy(alpha = 0.35f).toArgb(), 0x00FFFFFF),
+                    floatArrayOf(0f, 0.85f), Shader.TileMode.CLAMP)
+                style = android.graphics.Paint.Style.STROKE
+                strokeWidth = 1.dp.toPx()
+            }
+            nativeCanvas.drawRect(0f, 0f, w, h, strokePaint)
+
+            // 4. Máscara de Vinheta 360 (Resolve o aspecto de adesivo)
             val maskPaint = android.graphics.Paint().apply {
                 xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
             }
             
-            // Vertical: Suaviza Topo e Base
+            // Vertical: Suaviza Topo e Base (Fade progressivo)
             maskPaint.shader = LinearGradient(0f, 0f, 0f, h,
-                intArrayOf(-0x1, -0x1, -0x1, -0x1, 0x00FFFFFF),
-                floatArrayOf(0f, 0.20f, 0.5f ,0.80f, 1f), Shader.TileMode.CLAMP)
+                intArrayOf(-0x1, -0x1, 0x00FFFFFF),
+                floatArrayOf(0f, 0.75f, 1f), Shader.TileMode.CLAMP)
             nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
 
-            // Horizontal: Suaviza Laterais
+            // Horizontal: Suaviza Laterais (Integração lateral)
 //            maskPaint.shader = LinearGradient(0f, 0f, w, 0f,
 //                intArrayOf(0x00FFFFFF, -0x1, -0x1, 0x00FFFFFF),
-//                floatArrayOf(0f, 0.1f, 0.9f, 1f), Shader.TileMode.CLAMP)
+//                floatArrayOf(0f, 0.08f, 0.92f, 1f), Shader.TileMode.CLAMP)
 //            nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
             
             nativeCanvas.restoreToCount(checkpoint)
-
-            // 4. Polimento (Tint, Rim Light e Borda)
-            drawRect(color = overlayColor)
-            
-            // Rim Light superior (simula luz vindo de cima)
-            drawRect(
-                brush = Brush.verticalGradient(
-                    0f to Color.White.copy(alpha = 0.20f),
-                    0.15f to Color.Transparent
-                )
-            )
-
-            // Borda física (Stroke) semi-transparente para profundidade
-            drawRect(
-                brush = Brush.verticalGradient(
-                    0f to Color.White.copy(alpha = 0.15f),
-                    1f to Color.White.copy(alpha = 0.02f)
-                ),
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
-            )
         }
     }
