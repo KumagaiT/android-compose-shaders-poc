@@ -79,5 +79,12 @@ fun Modifier.legacyBackgroundBlur(
         }
     }
 
-    applyCommonBlurEffects(layoutCoords, blurState, bitmapPaint, overlayColor) { layoutCoords = it }
+    applyCommonBlurEffects(
+        layoutCoords = layoutCoords,
+        blurState = blurState,
+        overlayColor = overlayColor,
+        onPositioned = { layoutCoords = it }
+    ) { canvas, w, h ->
+        canvas.drawBitmap(blurState.internalBitmap!!, null, android.graphics.Rect(0, 0, w.roundToInt(), h.roundToInt()), bitmapPaint)
+    }
 }

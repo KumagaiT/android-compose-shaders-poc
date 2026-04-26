@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
 
@@ -31,19 +32,20 @@ class BlurState {
 
 
 /**
- * Lógica de desenho e efeitos visuais comum às duas implementações.
+ * Lógica de desenho e efeitos visuais comum a todas as implementações.
+ * Resolve o efeito de "adesivo colado" com uma máscara 360 e rim light.
+ * O parâmetro [drawBlur] permite que cada implementação defina como o fundo borrado é desenhado.
  */
 fun Modifier.applyCommonBlurEffects(
     layoutCoords: LayoutCoordinates?,
     blurState: BlurState,
-    bitmapPaint: android.graphics.Paint,
     overlayColor: Color,
-    onPositioned: (LayoutCoordinates) -> Unit
+    onPositioned: (LayoutCoordinates) -> Unit,
+    drawBlur: (android.graphics.Canvas, Float, Float) -> Unit
 ): Modifier = this.onGloballyPositioned { onPositioned(it) }
     .graphicsLayer { alpha = if (blurState.isCapturing) 0f else 1f }
     .drawBehind {
         val bitmap = blurState.internalBitmap ?: return@drawBehind
-        // Acessar o tick garante que o Compose re-execute este bloco quando o bitmap mudar
         val _tick = blurState.tick
 
         val w = size.width
@@ -51,29 +53,50 @@ fun Modifier.applyCommonBlurEffects(
 
         drawIntoCanvas { composeCanvas ->
             val nativeCanvas = composeCanvas.nativeCanvas
+            
+            // 1. Camada isolada para o fundo borrado + máscara
             val checkpoint = nativeCanvas.saveLayer(0f, 0f, w, h, null)
+            
+            // 2. Desenha o fundo borrado (específico de cada implementação)
+            drawBlur(nativeCanvas, w, h)
 
-            val dstRect = Rect(0, 0, w.roundToInt(), h.roundToInt())
-            nativeCanvas.drawBitmap(bitmap, null, dstRect, bitmapPaint)
-
-            // Máscara de Transparência (Fusão Suave)
+            // 3. Máscara de Vinheta Suave (Resolve o aspecto de adesivo)
             val maskPaint = android.graphics.Paint().apply {
-                shader = LinearGradient(
-                    0f, h * 0.65f, 0f, h,
-                    -0x1, 0x00FFFFFF, Shader.TileMode.CLAMP
-                )
                 xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
             }
+            
+            // Vertical: Suaviza Topo e Base
+            maskPaint.shader = LinearGradient(0f, 0f, 0f, h,
+                intArrayOf(0x00FFFFFF, -0x1, -0x1, 0x00FFFFFF),
+                floatArrayOf(0f, 0.08f, 0.92f, 1f), Shader.TileMode.CLAMP)
             nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
+
+            // Horizontal: Suaviza Laterais
+            maskPaint.shader = LinearGradient(0f, 0f, w, 0f,
+                intArrayOf(0x00FFFFFF, -0x1, -0x1, 0x00FFFFFF),
+                floatArrayOf(0f, 0.04f, 0.96f, 1f), Shader.TileMode.CLAMP)
+            nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
+            
             nativeCanvas.restoreToCount(checkpoint)
 
-            // Vidro e Brilho de Borda
+            // 4. Polimento (Tint, Rim Light e Borda)
             drawRect(color = overlayColor)
+            
+            // Rim Light superior (simula luz vindo de cima)
             drawRect(
                 brush = Brush.verticalGradient(
-                    0f to Color.White.copy(alpha = 0.12f),
-                    0.25f to Color.Transparent
+                    0f to Color.White.copy(alpha = 0.20f),
+                    0.15f to Color.Transparent
                 )
+            )
+
+            // Borda física (Stroke) semi-transparente para profundidade
+            drawRect(
+                brush = Brush.verticalGradient(
+                    0f to Color.White.copy(alpha = 0.15f),
+                    1f to Color.White.copy(alpha = 0.02f)
+                ),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
             )
         }
     }
