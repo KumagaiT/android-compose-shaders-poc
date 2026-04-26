@@ -27,15 +27,15 @@ class BlurState {
     var isCapturing = false
     var internalBitmap: Bitmap? = null
     var lastUpdateTime: Long = 0
-    var tick by mutableLongStateOf(0L) // Usado para forçar a atualização do desenho no Compose
+    var tick by mutableLongStateOf(0L) // Used to force draw updates in Compose
 }
 
 
 
 /**
- * Lógica de desenho e efeitos visuais comum a todas as implementações.
- * Resolve o efeito de "adesivo colado" com uma máscara 360 e rim light.
- * O parâmetro [drawBlur] permite que cada implementação defina como o fundo borrado é desenhado.
+ * Drawing logic and visual effects common to all implementations.
+ * Resolves the "sticker" look with a 360 mask and rim light.
+ * The [drawBlur] parameter allows each implementation to define how the blurred background is drawn.
  */
 fun Modifier.applyCommonBlurEffects(
     layoutCoords: LayoutCoordinates?,
@@ -55,21 +55,21 @@ fun Modifier.applyCommonBlurEffects(
         drawIntoCanvas { composeCanvas ->
             val nativeCanvas = composeCanvas.nativeCanvas
             
-            // 1. Camada isolada para o fundo borrado + máscara
+            // 1. Isolated layer for blurred background + mask
             val checkpoint = nativeCanvas.saveLayer(0f, 0f, w, h, null)
             
-            // 2. Desenha o fundo borrado (específico de cada implementação)
+            // 2. Draws the blurred background (specific to each implementation)
             drawBlur(nativeCanvas, w, h)
 
-            // 3. Desenha Tint, Rim Light e Borda dentro da camada para que sofram a máscara
-            // Tinta de preenchimento (Overlay Color)
+            // 3. Draw Tint, Rim Light, and Stroke inside the layer so they are masked
+            // Fill tint (Overlay Color)
             val tintPaint = android.graphics.Paint().apply { 
                 color = overlayColor.toArgb() 
                 style = android.graphics.Paint.Style.FILL
             }
             nativeCanvas.drawRect(0f, 0f, w, h, tintPaint)
 
-            // Rim Light superior (simula incidência de luz no topo)
+            // Top Rim Light (Simulates light hitting the top edge)
             val rimPaint = android.graphics.Paint().apply {
                 shader = LinearGradient(0f, 0f, 0f, h * 0.2f,
                     intArrayOf(Color.White.copy(alpha = 0.25f).toArgb(), 0x00FFFFFF),
@@ -77,7 +77,7 @@ fun Modifier.applyCommonBlurEffects(
             }
             nativeCanvas.drawRect(0f, 0f, w, h, rimPaint)
 
-            // Borda física (Stroke) com fade para não cortar seco na base
+            // Physical edge (Stroke) with fade to avoid sharp cut at the base
             val strokePaint = android.graphics.Paint().apply {
                 shader = LinearGradient(0f, 0f, 0f, h,
                     intArrayOf(Color.White.copy(alpha = 0.35f).toArgb(), 0x00FFFFFF),
@@ -87,21 +87,21 @@ fun Modifier.applyCommonBlurEffects(
             }
             nativeCanvas.drawRect(0f, 0f, w, h, strokePaint)
 
-            // 4. Máscara de Vinheta 360 (Resolve o aspecto de adesivo)
+            // 4. 360° Vignette Mask (Solves the "sticker" look)
             val maskPaint = android.graphics.Paint().apply {
                 xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
             }
             
-            // Vertical: Suaviza Topo e Base (Fade progressivo)
+            // Vertical: Smoothens Top and Base (Progressive fade)
             maskPaint.shader = LinearGradient(0f, 0f, 0f, h,
-                intArrayOf(-0x1, -0x1, 0x00FFFFFF),
-                floatArrayOf(0f, 0.75f, 1f), Shader.TileMode.CLAMP)
+                intArrayOf(-0x1, -0x1, -0x1, 0x00FFFFFF),
+                floatArrayOf(0f, 0.15f, 0.85f, 1f), Shader.TileMode.CLAMP)
             nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
 
-            // Horizontal: Suaviza Laterais (Integração lateral)
+            // Horizontal: Smoothens Sides (Side integration)
 //            maskPaint.shader = LinearGradient(0f, 0f, w, 0f,
 //                intArrayOf(0x00FFFFFF, -0x1, -0x1, 0x00FFFFFF),
-//                floatArrayOf(0f, 0.08f, 0.92f, 1f), Shader.TileMode.CLAMP)
+//                floatArrayOf(0f, 0.05f, 0.95f, 1f), Shader.TileMode.CLAMP)
 //            nativeCanvas.drawRect(0f, 0f, w, h, maskPaint)
             
             nativeCanvas.restoreToCount(checkpoint)

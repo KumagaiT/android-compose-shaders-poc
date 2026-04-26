@@ -22,13 +22,13 @@ import androidx.compose.ui.graphics.toArgb
 @Composable
 fun NativeSmokeBackground(
     modifier: Modifier = Modifier,
-    smokeColor: Color = Color(0xFFFFD0E0), // Cor única da fumaça (clara)
+    smokeColor: Color = Color(0xFFFFD0E0), // Single smoke color (light)
     isAnimated: Boolean = false
 ) {
-    // 1. Carrega o shader AGSL
+    // 1. Loads the AGSL shader
     val shader = remember { RuntimeShader(SMOKE_SHADER_CODE) }
 
-    // 2. Gerencia a animação do tempo se solicitado
+    // 2. Manages time animation if requested
     val time = if (isAnimated) {
         val infiniteTransition = rememberInfiniteTransition(label = "SmokeTime")
         infiniteTransition.animateFloat(
@@ -41,14 +41,14 @@ fun NativeSmokeBackground(
         0f
     }
 
-    // 3. Usa o Canvas do Compose para desenhar o efeito nativo
+    // 3. Uses Compose Canvas to draw the native effect
     Canvas(modifier = modifier.fillMaxSize()) {
-        // Configura os uniforms apenas quando mudam
+        // Sets uniforms only when they change
         shader.setFloatUniform("uResolution", size.width, size.height)
         shader.setFloatUniform("uTime", time)
         shader.setColorUniform("uSmokeColor", smokeColor.toArgb())
 
-        // Aplica o shader como um RenderEffect (executado nativamente na GPU)
+        // Applies the shader as a RenderEffect (executed natively on GPU)
         drawContext.canvas.nativeCanvas.drawPaint(Paint().apply {
             setShader(shader)
         })

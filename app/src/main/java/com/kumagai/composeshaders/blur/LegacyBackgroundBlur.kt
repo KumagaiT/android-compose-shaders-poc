@@ -15,8 +15,8 @@ import kotlin.math.roundToInt
 
 
 /**
- * IMPLEMENTAÇÃO 1: NDK (C++ / NEON SIMD)
- * Focado em controle total de memória e otimização para CPU.
+ * IMPLEMENTATION 1: NDK (C++ / NEON SIMD)
+ * Focused on full memory control and CPU optimization.
  */
 fun Modifier.legacyBackgroundBlur(
     blurRadius: Int = 10,
@@ -33,7 +33,7 @@ fun Modifier.legacyBackgroundBlur(
             val coords = layoutCoords
             if (coords != null && coords.isAttached && !blurState.isCapturing) {
                 val now = System.currentTimeMillis()
-                // Throttling: aqui é possivel aumentar o valor de 16 para cenários onde os devices são menos performáticos, porém causa um efeito de `lag`
+                // Throttling: it is possible to increase the value from 16 for scenarios where devices are less performant, but it causes a `lag` effect
                 if (now - blurState.lastUpdateTime < 16) return@OnPreDrawListener true
 
                 val width = coords.size.width.toFloat()

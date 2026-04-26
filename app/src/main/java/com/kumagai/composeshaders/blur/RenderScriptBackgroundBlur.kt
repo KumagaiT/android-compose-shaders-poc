@@ -22,12 +22,12 @@ import androidx.compose.ui.platform.LocalView
 import kotlin.math.roundToInt
 
 /**
- * IMPLEMENTAÇÃO 2: RENDER SCRIPT (Acelerado por Hardware)
- * Usa o ScriptIntrinsicBlur do Android. Extremamente rápido em Android 8-11.
- * Ideal para o Snapdragon 450 por delegar o peso para a GPU.
+ * IMPLEMENTATION 2: RENDER SCRIPT (Hardware Accelerated)
+ * Uses Android's ScriptIntrinsicBlur. Extremely fast on Android 8-11.
+ * Ideal for Snapdragon 450 by offloading the load to the GPU.
  */
 fun Modifier.renderScriptBackgroundBlur(
-    blurRadius: Float = 10f, // RenderScript aceita até 25f
+    blurRadius: Float = 10f, // RenderScript accepts up to 25f
     downsample: Float = 2f,
     overlayColor: Color = Color.White.copy(alpha = 0.20f)
 ): Modifier = this.composed {
@@ -37,7 +37,7 @@ fun Modifier.renderScriptBackgroundBlur(
     var layoutCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val bitmapPaint = remember { android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG) }
 
-    // Gerenciador do Ciclo de Vida do RenderScript
+    // RenderScript LifeCycle Manager
     val rsManager = remember(context) { RenderScriptManager(context) }
 
     DisposableEffect(view) {
@@ -76,7 +76,7 @@ fun Modifier.renderScriptBackgroundBlur(
                     }
                     canvas.restore()
 
-                    // Executa o desfoque via RenderScript
+                    // Execute blur via RenderScript
                     rsManager.blur(bitmap, blurRadius)
                     blurState.lastUpdateTime = now
                 }
@@ -103,7 +103,7 @@ fun Modifier.renderScriptBackgroundBlur(
 }
 
 /**
- * Gerenciador de ciclo de vida do RenderScript.
+ * RenderScript lifecycle manager.
  */
 private class RenderScriptManager(context: Context) {
     private val rs = RenderScript.create(context)

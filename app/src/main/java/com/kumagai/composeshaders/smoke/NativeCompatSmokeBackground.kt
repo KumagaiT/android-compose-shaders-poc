@@ -18,22 +18,22 @@ fun NativeCompatSmokeBackground(
     smokeColor: Color = Color(0xFFFFD0E0),
     isAnimated: Boolean = true
 ) {
-    // Mantemos o renderer em um remember para evitar recriação
+    // We keep the renderer in a remember to avoid recreation
     val smokeRenderer = remember { SmokeRenderer() }
 
     AndroidView(
         modifier = modifier.fillMaxSize(),
         factory = { context ->
             GLSurfaceView(context).apply {
-                // Configuração para GLES 2.0 (mais compatível)
+                // Configuration for GLES 2.0 (most compatible)
                 setEGLContextClientVersion(2)
 
-                // Otimização: solicita um config sem depth ou stencil se não for usar (economiza banda)
+                // Optimization: request a config without depth or stencil if not needed (saves bandwidth)
                 setEGLConfigChooser(8, 8, 8, 8, 0, 0)
 
                 setRenderer(smokeRenderer)
 
-                // Preservar o contexto ajuda na performance de troca de apps
+                // Preserving the context helps with performance when switching apps
                 preserveEGLContextOnPause = true
 
                 renderMode = if (isAnimated) {
@@ -44,7 +44,7 @@ fun NativeCompatSmokeBackground(
             }
         },
         update = { view ->
-            // Atualiza apenas os valores atômicos no renderer
+            // Update only atomic values in the renderer
             smokeRenderer.smokeColorInt = smokeColor.toArgb()
             smokeRenderer.isAnimated = isAnimated
 

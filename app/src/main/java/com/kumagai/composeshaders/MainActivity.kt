@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
                 var selectedColor by remember { mutableStateOf(Color(0xFFFF00E0)) }
                 
-                // Estados para as implementações de cada tela
+                // States for implementations of each screen
                 var smokeImpl by remember { mutableIntStateOf(0) }
                 var blurImpl by remember { mutableIntStateOf(0) }
 
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         Surface(tonalElevation = 3.dp) {
                             Column {
-                                // 1. Seletor de Cores
+                                // 1. Color Selector
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
 
-                                // 2. Seletor de Implementação (Contextual)
+                                // 2. Implementation Selector (Contextual)
                                 val options = if (currentRoute == "smoke") {
                                     listOf("GLES (Native)", "AGSL (13+)", "CPU (Pixel)")
                                 } else {
@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
 
-                                // 3. Navegação Principal
+                                // 3. Main Navigation
                                 NavigationBar(modifier = Modifier.height(64.dp)) {
                                     NavigationBarItem(
                                         icon = { Text("💨", style = MaterialTheme.typography.titleLarge) },
@@ -163,7 +163,7 @@ fun SmokeSection(selectedColor: Color, implementationIndex: Int) {
                     NativeSmokeBackground(smokeColor = selectedColor, isAnimated = true)
                 } else {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("AGSL requer Android 13+")
+                        Text("AGSL requires Android 13+")
                     }
                 }
             }
@@ -182,7 +182,7 @@ fun SmokeSection(selectedColor: Color, implementationIndex: Int) {
 @Composable
 fun BlurSection(selectedColor: Color, implementationIndex: Int) {
     Box(modifier = Modifier.fillMaxSize()) {
-        // Conteúdo de fundo para ser borrado
+        // Background content to be blurred
         LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 100.dp)) {
             items(30) { i ->
                 Card(
@@ -231,7 +231,7 @@ fun BlurSection(selectedColor: Color, implementationIndex: Int) {
             }
         }
 
-        // Janela de "Vidro" (Frosty Window)
+        // "Glass" Window (Frosty Window)
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)

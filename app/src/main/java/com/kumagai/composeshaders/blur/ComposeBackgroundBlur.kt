@@ -17,9 +17,9 @@ import androidx.compose.ui.platform.LocalView
 import kotlin.math.roundToInt
 
 /**
- * IMPLEMENTAÇÃO 3: MODERN COMPOSE (API 31+)
+ * IMPLEMENTATION 3: MODERN COMPOSE (API 31+)
  * 
- * Utiliza RenderNode e RenderEffect para um blur nativo na RenderThread.
+ * Uses RenderNode and RenderEffect for a native blur on the RenderThread.
  */
 fun Modifier.modernBackgroundBlur(
     blurRadius: Float = 10f,

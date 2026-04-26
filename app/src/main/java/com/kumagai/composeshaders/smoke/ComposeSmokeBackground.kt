@@ -56,7 +56,7 @@ fun ComposeSmokeBackground(
             val currentTime = time
             val aspect = width.toFloat() / height.toFloat()
 
-            // Direções de movimento diferentes para cada oitava (Quebra a linearidade)
+            // Different movement directions for each octave (Breaks linearity)
             val velX = floatArrayOf(0.12f, -0.08f)
             val velY = floatArrayOf(0.08f, 0.15f)
 
@@ -69,12 +69,12 @@ fun ComposeSmokeBackground(
                     var v = 0.0f
                     var a = 0.5f
                     
-                    // Coordenadas iniciais
+                    // Initial coordinates
                     var tx = px * 2.5f
                     var ty = py * 2.5f
 
                     for (i in 0 until 2) {
-                        // Aplica movimento específico da oitava ANTES do ruído
+                        // Apply octave-specific movement BEFORE noise
                         val noiseX = tx + currentTime * velX[i]
                         val noiseY = ty + currentTime * velY[i]
                         
@@ -86,7 +86,7 @@ fun ComposeSmokeBackground(
                         val ux = fx * fx * (3.0f - 2.0f * fx)
                         val uy = fy * fy * (3.0f - 2.0f * fy)
 
-                        // Hash Inline
+                        // Inline Hash
                         val n00 = ((ix * 1619 + iy * 31337).let { n -> (n xor (n ushr 16)) * 0x45d9f3b }.let { n -> (n xor (n ushr 16)) and 0x7FFFFFFF }) / 2147483647f
                         val n10 = (((ix + 1) * 1619 + iy * 31337).let { n -> (n xor (n ushr 16)) * 0x45d9f3b }.let { n -> (n xor (n ushr 16)) and 0x7FFFFFFF }) / 2147483647f
                         val n01 = ((ix * 1619 + (iy + 1) * 31337).let { n -> (n xor (n ushr 16)) * 0x45d9f3b }.let { n -> (n xor (n ushr 16)) and 0x7FFFFFFF }) / 2147483647f
@@ -94,7 +94,7 @@ fun ComposeSmokeBackground(
 
                         v += a * (n00 + ux * (n10 - n00) + uy * (n01 - n00 + ux * (n00 - n10 + n11 - n01)))
 
-                        // Rotação e Escala para a próxima oitava (Scrambling)
+                        // Rotation and Scale for next octave (Scrambling)
                         val rx = 0.8f * tx + 0.6f * ty
                         val ry = -0.6f * tx + 0.8f * ty
                         tx = rx * 2.2f + 7.3f
