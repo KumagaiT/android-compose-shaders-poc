@@ -3,6 +3,10 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+base {
+    archivesName.set("ComposeShaders")
+}
+
 android {
     namespace = "com.kumagai.composeshaders"
     compileSdk {
@@ -11,18 +15,34 @@ android {
         }
     }
 
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            isUniversalApk = true
+        }
+    }
+
     defaultConfig {
         applicationId = "com.kumagai.composeshaders"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Habilita RenderScript
         renderscriptTargetApi = 21
         renderscriptSupportModeEnabled = true
+        externalNativeBuild {
+            cmake {
+                // Use the standard CMake argument to enable NEON for ARM architectures.
+                // This avoids errors when compiling for non-ARM ABIs (like x86_64).
+                arguments("-DANDROID_ARM_NEON=TRUE")
+            }
+        }
     }
 
     buildTypes {
@@ -54,7 +74,7 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.03.01") // Versão estável hipotética em 2026
+    val composeBom = platform("androidx.compose:compose-bom:2026.03.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 

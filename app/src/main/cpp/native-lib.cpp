@@ -3,7 +3,9 @@
 #include <vector>
 #include <android/log.h>
 #include <android/bitmap.h>
+#if defined(__arm__) || defined(__aarch64__)
 #include <arm_neon.h>
+#endif
 #include <cmath>
 #include <algorithm>
 
