@@ -14,11 +14,50 @@ A high-performance background blur effect with "Soft Edge" (Vignette) and "Rim L
 - **RenderScript (GPU Legacy):** Hardware-accelerated blur using the intrinsic API, ideal for Android 8-11.
 - **Modern RenderNode (GPU Nativa - API 31+):** Native Android 12+ `RenderEffect` pipeline, the most efficient solution for modern devices.
 
-### 2. 💨 Smoke Background (GPU Shaders)
+#### 📖 How to use:
+```kotlin
+Box(
+    modifier = Modifier
+        .fillMaxWidth()
+        .height(150.dp)
+        .modernBackgroundBlur(overlayColor = Color.White.copy(alpha = 0.15f))
+) {
+    Text("Frosty Window Content")
+}
+```
+
+### 2. ✨ Shimmer Effect (Synchronized Loading)
+A high-performance loading shimmer that synchronizes across multiple views to create a "window" effect:
+- **AGSL (API 33+):** GPU-native shimmer using a custom Gaussian distribution shader for a soft, natural glow without hard bevels.
+- **Compose Canvas (Compatible):** Optimized `Brush` implementation with global coordinate synchronization for all Android versions.
+- **Performance Optimized:** Uses non-recomposing coordinate tracking to maintain high FPS (60+) during fast scrolls, even in complex lists.
+- **Window Synchronization:** Every node acts as a "window" to a single global shimmer animation, preventing visual clutter and ensuring consistency.
+
+#### 📖 How to use:
+```kotlin
+val shimmerState = rememberShimmerState()
+
+Box(
+    modifier = Modifier
+        .fillMaxWidth()
+        .height(20.dp)
+        .shimmer(state = shimmerState, loading = true)
+)
+```
+
+### 3. 💨 Smoke Background (GPU Shaders)
 Dynamic fractal noise (FBM) backgrounds with organic, grid-free motion:
 - **AGSL (API 33+):** Modern `RuntimeShader` implementation integrated into the Compose pipeline.
 - **OpenGL ES 2.0 (Native NDK):** JNI/C++ fallback for high-performance animation on devices from API 24+.
 - **Compose CPU:** A reference implementation using pixel-looping (for educational/debugging purposes).
+
+#### 📖 How to use:
+```kotlin
+NativeSmokeBackground(
+    smokeColor = Color(0xFFFF00E0),
+    isAnimated = true
+)
+```
 
 ---
 
@@ -27,9 +66,11 @@ Dynamic fractal noise (FBM) backgrounds with organic, grid-free motion:
 - **Multi-Engine Blur**: Contextual choice between NDK, RenderScript, and RenderNode based on device capabilities.
 - **360° Soft-Vignette Masking**: Advanced `saveLayer` masking to eliminate the "sticker" look and blend glass surfaces naturally.
 - **Visual Depth Polish**: Integrated "Rim Lighting" and semi-transparent "Physical Strokes" for a premium glass feel.
+- **Synchronized Loading placeholders**: Advanced shimmer system with Gaussian distribution for professional loading states.
 - **Real-time Performance**: Optimized to maintain 60 FPS scroll even on Snapdragon 450 devices.
-- **Interactive UI**: Tabbed navigation to switch between **Smoke** and **Blur** effects with live configuration chips.
+- **Interactive UI**: Tabbed navigation to switch between **Smoke**, **Blur**, and **Shimmer** effects with live configuration chips.
 - **Live Color Picker**: Global color state that updates both shaders and glass tints in real-time.
+- **Synchronized Shimmer**: Unified loading states that follow a single global animation pattern.
 
 ---
 
@@ -47,6 +88,10 @@ android-compose-shaders-poc/
 │   │       │   ├── LegacyBackgroundBlur.kt // NDK CPU Engine
 │   │       │   ├── RenderScriptBackgroundBlur.kt // RS GPU Engine
 │   │       │   └── ComposeBackgroundBlur.kt // Modern RenderNode Engine (API 31+)
+│   │       ├── shimmer/
+│   │       │   ├── Shimmer.kt         // Shared State & Unified Modifier
+│   │       │   ├── ComposeShimmer.kt  // Brush-based Engine
+│   │       │   └── AgslShimmer.kt     // AGSL-based Engine
 │   │       ├── smoke/
 │   │       │   ├── NativeSmokeBackground.kt // AGSL implementation
 │   │       │   └── NativeCompatSmokeBackground.kt // NDK GLES implementation
