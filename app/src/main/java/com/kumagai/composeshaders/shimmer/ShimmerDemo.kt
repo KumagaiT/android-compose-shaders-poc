@@ -45,7 +45,7 @@ fun ShimmerDemo(
             Text(
                 "Shared Shimmer Effect",
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(top = 110.dp, bottom = 8.dp)
             )
             Text(
                 "Tap a card to toggle its loading state. All active shimmers are synchronized.",
