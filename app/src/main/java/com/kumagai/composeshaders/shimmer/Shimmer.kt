@@ -43,29 +43,41 @@ internal const val SHIMMER_SHADER_CODE = """
  */
 @Stable
 class ShimmerState(
-    internal val animationProgress: State<Float>
+    internal val animationProgress: State<Float>,
+    activeCountState: MutableState<Int> = mutableIntStateOf(0)
 ) {
-    // Non-state variables to avoid recomposition while scrolling
-    internal var globalX: Float = 0f
-    internal var globalY: Float = 0f
+    internal var activeCount by activeCountState
 }
+
+/**
+ * CompositionLocal for ShimmerState to allow subcomponents to use the same shimmer animation
+ * without explicit prop drilling.
+ */
+val LocalShimmerState = compositionLocalOf<ShimmerState?> { null }
 
 @Composable
 fun rememberShimmerState(
     durationMillis: Int = 1500,
     easing: Easing = LinearEasing
 ): ShimmerState {
+    val activeCount = remember { mutableIntStateOf(0) }
     val infiniteTransition = rememberInfiniteTransition(label = "ShimmerTransition")
+    
+    // Use targetValue as a way to "pause" or "resume" based on activeCount
+    // On many systems, if targetValue == initialValue, the animation doesn't run.
+    // However, to be sure we save power, we can use a conditional animation or
+    // just let it run if activeCount > 0.
     val progress = infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 1f,
+        targetValue = if (activeCount.intValue > 0) 1f else 0f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis, easing = easing),
             repeatMode = RepeatMode.Restart
         ),
         label = "ShimmerProgress"
     )
-    return remember { ShimmerState(progress) }
+    
+    return remember { ShimmerState(progress, activeCount) }
 }
 
 /**
@@ -73,7 +85,7 @@ fun rememberShimmerState(
  * Tracks global position to allow the "window" effect.
  */
 fun Modifier.shimmer(
-    state: ShimmerState,
+    state: ShimmerState? = null,
     loading: Boolean = true,
     color: Color = Color.LightGray.copy(alpha = 0.3f),
     highlightColor: Color = Color.White.copy(alpha = 0.7f),
@@ -86,8 +98,25 @@ fun Modifier.shimmer(
     implementation = implementation
 )
 
+@Composable
+fun Modifier.shimmer(
+    loading: Boolean = true,
+    color: Color = Color.LightGray.copy(alpha = 0.3f),
+    highlightColor: Color = Color.White.copy(alpha = 0.7f),
+    implementation: ShimmerImplementation = ShimmerImplementation.Compose
+): Modifier {
+    val state = LocalShimmerState.current ?: rememberShimmerState()
+    return this.shimmer(
+        state = state,
+        loading = loading,
+        color = color,
+        highlightColor = highlightColor,
+        implementation = implementation
+    )
+}
+
 private data class ShimmerElement(
-    val state: ShimmerState,
+    val state: ShimmerState?,
     val loading: Boolean,
     val color: Color,
     val highlightColor: Color,
@@ -113,14 +142,54 @@ private data class ShimmerElement(
 }
 
 private class ShimmerNode(
-    var state: ShimmerState,
-    var loading: Boolean,
+    state: ShimmerState?,
+    loading: Boolean,
     var color: Color,
     var highlightColor: Color,
     var implementation: ShimmerImplementation
 ) : Modifier.Node(), DrawModifierNode, GlobalPositionAwareModifierNode {
 
+    var state: ShimmerState? = state
+        set(value) {
+            if (field != value) {
+                if (isAttached && loading) {
+                    field?.activeCount = (field?.activeCount ?: 0) - 1
+                    value?.activeCount = (value.activeCount) + 1
+                }
+                field = value
+                updateShader()
+            }
+        }
+
+    var loading: Boolean = loading
+        set(value) {
+            if (field != value) {
+                if (isAttached) {
+                    if (value) {
+                        state?.activeCount = (state?.activeCount ?: 0) + 1
+                    } else {
+                        state?.activeCount = (state?.activeCount ?: 0) - 1
+                    }
+                }
+                field = value
+            }
+        }
+
     private var shader: RuntimeShader? = null
+    private var globalX: Float = 0f
+    private var globalY: Float = 0f
+
+    override fun onAttach() {
+        if (loading) {
+            state?.activeCount = (state?.activeCount ?: 0) + 1
+        }
+    }
+
+    override fun onDetach() {
+        if (loading) {
+            state?.activeCount = (state?.activeCount ?: 0) - 1
+        }
+    }
 
     init {
         updateShader()
@@ -137,23 +206,24 @@ private class ShimmerNode(
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
         if (coordinates.isAttached) {
             val offset = coordinates.localToRoot(Offset.Zero)
-            state.globalX = offset.x
-            state.globalY = offset.y
+            globalX = offset.x
+            globalY = offset.y
             invalidateDraw()
         }
     }
 
     override fun ContentDrawScope.draw() {
-        if (loading) {
+        val currentState = state
+        if (loading && currentState != null) {
             when (implementation) {
                 ShimmerImplementation.Compose -> {
-                    drawComposeShimmer(state, color, highlightColor)
+                    drawComposeShimmer(currentState, globalX, globalY, color, highlightColor)
                 }
                 ShimmerImplementation.AGSL, ShimmerImplementation.Native -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && shader != null) {
-                        drawAgslShimmer(shader!!, state, color, highlightColor)
+                        drawAgslShimmer(shader!!, currentState, globalX, globalY, color, highlightColor)
                     } else {
-                        drawComposeShimmer(state, color, highlightColor)
+                        drawComposeShimmer(currentState, globalX, globalY, color, highlightColor)
                     }
                 }
             }

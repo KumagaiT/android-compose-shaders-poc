@@ -10,6 +10,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,38 +37,38 @@ fun ShimmerDemo(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Text(
-                "Shared Shimmer Effect",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(top = 110.dp, bottom = 8.dp)
-            )
-            Text(
-                "Tap a card to toggle its loading state. All active shimmers are synchronized.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
+    CompositionLocalProvider(LocalShimmerState provides shimmerState) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Text(
+                    "Shared Shimmer Effect",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(top = 110.dp, bottom = 8.dp)
+                )
+                Text(
+                    "Tap a card to toggle its loading state. All active shimmers are synchronized via CompositionLocal.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
 
-        items(loadingStates.size) { index ->
-            ShimmerLoadingItem(
-                state = shimmerState,
-                implementation = implementation,
-                baseColor = selectedColor,
-                loading = loadingStates[index],
-                onClick = { loadingStates[index] = !loadingStates[index] }
-            )
+            items(loadingStates.size) { index ->
+                ShimmerLoadingItem(
+                    implementation = implementation,
+                    baseColor = selectedColor,
+                    loading = loadingStates[index],
+                    onClick = { loadingStates[index] = !loadingStates[index] }
+                )
+            }
         }
     }
 }
 
 @Composable
 fun ShimmerLoadingItem(
-    state: ShimmerState,
     implementation: ShimmerImplementation,
     baseColor: Color,
     loading: Boolean,
@@ -93,7 +94,6 @@ fun ShimmerLoadingItem(
                     .then(
                         if (loading) {
                             Modifier.shimmer(
-                                state = state,
                                 implementation = implementation,
                                 color = baseColor.copy(alpha = 0.2f),
                                 highlightColor = baseColor.copy(alpha = 0.6f)
@@ -116,7 +116,6 @@ fun ShimmerLoadingItem(
                         .then(
                             if (loading) {
                                 Modifier.shimmer(
-                                    state = state,
                                     implementation = implementation,
                                     color = baseColor.copy(alpha = 0.2f),
                                     highlightColor = baseColor.copy(alpha = 0.6f)
@@ -137,7 +136,6 @@ fun ShimmerLoadingItem(
                             .height(14.dp)
                             .clip(RoundedCornerShape(4.dp))
                             .shimmer(
-                                state = state,
                                 implementation = implementation,
                                 color = baseColor.copy(alpha = 0.2f),
                                 highlightColor = baseColor.copy(alpha = 0.6f)

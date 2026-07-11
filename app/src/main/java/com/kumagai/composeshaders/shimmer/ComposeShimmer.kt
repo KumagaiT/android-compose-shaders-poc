@@ -8,6 +8,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 
 fun DrawScope.drawComposeShimmer(
     state: ShimmerState,
+    offsetX: Float,
+    offsetY: Float,
     color: Color,
     highlightColor: Color
 ) {
@@ -20,7 +22,7 @@ fun DrawScope.drawComposeShimmer(
     val currentGlobalPos = progress * totalRange - 400.0f
     
     // Convert global center to local center using non-state coordinates from state
-    val localCenterX = currentGlobalPos - state.globalX - (state.globalY * 0.4f)
+    val localCenterX = currentGlobalPos - offsetX - (offsetY * 0.4f)
     
     val startX = localCenterX - shimmerWidth / 2
     val endX = localCenterX + shimmerWidth / 2

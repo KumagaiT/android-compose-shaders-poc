@@ -35,14 +35,13 @@ A high-performance loading shimmer that synchronizes across multiple views to cr
 
 #### 📖 How to use:
 ```kotlin
-val shimmerState = rememberShimmerState()
-
-Box(
-    modifier = Modifier
-        .fillMaxWidth()
-        .height(20.dp)
-        .shimmer(state = shimmerState, loading = true)
-)
+// Recommended: Using CompositionLocal (automatically synchronizes all sub-components)
+CompositionLocalProvider(LocalShimmerState provides rememberShimmerState()) {
+    Column {
+        Box(modifier = Modifier.shimmer()) // Synchronized
+        Box(modifier = Modifier.shimmer()) // Synchronized
+    }
+}
 ```
 
 ### 3. 💨 Smoke Background (GPU Shaders)

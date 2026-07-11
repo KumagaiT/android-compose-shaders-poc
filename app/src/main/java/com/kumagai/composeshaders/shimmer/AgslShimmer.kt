@@ -12,11 +12,13 @@ import androidx.compose.ui.graphics.toArgb
 fun DrawScope.drawAgslShimmer(
     shader: RuntimeShader,
     state: ShimmerState,
+    offsetX: Float,
+    offsetY: Float,
     color: Color,
     highlightColor: Color
 ) {
     shader.setFloatUniform("uResolution", size.width, size.height)
-    shader.setFloatUniform("uOffset", state.globalX, state.globalY)
+    shader.setFloatUniform("uOffset", offsetX, offsetY)
     shader.setFloatUniform("uProgress", state.animationProgress.value)
     shader.setColorUniform("uColor", color.toArgb())
     shader.setColorUniform("uHighlightColor", highlightColor.toArgb())
