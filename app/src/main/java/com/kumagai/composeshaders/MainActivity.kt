@@ -23,6 +23,7 @@ import com.kumagai.composeshaders.blur.renderScriptBackgroundBlur
 import com.kumagai.composeshaders.smoke.ComposeSmokeBackground
 import com.kumagai.composeshaders.smoke.NativeCompatSmokeBackground
 import com.kumagai.composeshaders.smoke.NativeSmokeBackground
+import com.kumagai.composeshaders.shimmer.ShimmerDemo
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
                 // States for implementations of each screen
                 var smokeImpl by remember { mutableIntStateOf(0) }
                 var blurImpl by remember { mutableIntStateOf(0) }
+                var shimmerImpl by remember { mutableIntStateOf(0) }
 
                 val colors = listOf(
                     Color(0xFFFF00E0), // Magenta
@@ -75,12 +77,18 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 // 2. Implementation Selector (Contextual)
-                                val options = if (currentRoute == "smoke") {
-                                    listOf("GLES (Native)", "AGSL (13+)", "CPU (Pixel)")
-                                } else {
-                                    listOf("NDK (CPU)", "RS (GPU)", "Modern (31+)")
+                                val options = when (currentRoute) {
+                                    "smoke" -> listOf("GLES (Native)", "AGSL (13+)", "CPU (Pixel)")
+                                    "blur" -> listOf("NDK (CPU)", "RS (GPU)", "Modern (31+)")
+                                    "shimmer" -> listOf("Compose", "AGSL (13+)", "Native (PoC)")
+                                    else -> emptyList()
                                 }
-                                val selectedIndex = if (currentRoute == "smoke") smokeImpl else blurImpl
+                                val selectedIndex = when (currentRoute) {
+                                    "smoke" -> smokeImpl
+                                    "blur" -> blurImpl
+                                    "shimmer" -> shimmerImpl
+                                    else -> 0
+                                }
                                 
                                 Row(
                                     modifier = Modifier
@@ -92,7 +100,11 @@ class MainActivity : ComponentActivity() {
                                         FilterChip(
                                             selected = selectedIndex == index,
                                             onClick = {
-                                                if (currentRoute == "smoke") smokeImpl = index else blurImpl = index
+                                                when (currentRoute) {
+                                                    "smoke" -> smokeImpl = index
+                                                    "blur" -> blurImpl = index
+                                                    "shimmer" -> shimmerImpl = index
+                                                }
                                             },
                                             label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                                             modifier = Modifier.padding(horizontal = 4.dp)
@@ -130,6 +142,20 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
                                     )
+                                    NavigationBarItem(
+                                        icon = { Text("✨", style = MaterialTheme.typography.titleLarge) },
+                                        label = { Text("Shimmer") },
+                                        selected = currentRoute == "shimmer",
+                                        onClick = {
+                                            if (currentRoute != "shimmer") {
+                                                navController.navigate("shimmer") {
+                                                    popUpTo("smoke") { saveState = true }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -146,10 +172,27 @@ class MainActivity : ComponentActivity() {
                         composable("blur") {
                             BlurSection(selectedColor, blurImpl)
                         }
+                        composable("shimmer") {
+                            ShimmerSection(selectedColor, shimmerImpl)
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ShimmerSection(selectedColor: Color, implementationIndex: Int) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        ShimmerDemo(selectedColor, implementationIndex)
+        
+        val (label, infoColor) = when (implementationIndex) {
+            0 -> "Compose Brush (Compatible)" to Color.Yellow
+            1 -> "AGSL Shader (Android 13+)" to Color.Cyan
+            else -> "Native (GPU Optimized)" to Color.Magenta
+        }
+        InfoOverlay(label, infoColor)
     }
 }
 
